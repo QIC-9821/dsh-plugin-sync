@@ -94,6 +94,9 @@ window.__ModuleLoader__.load({
           }),
           h('span', { key: 'text' }, [
             h('b', { key: 'name' }, props.label),
+            props.dirty
+              ? h('span', { key: 'dirty', style: { marginLeft: 6, fontSize: 11, color: 'var(--dsh-accent, #3b82f6)' } }, '未保存')
+              : null,
             props.desc ? h('div', { key: 'desc', style: MUTED }, props.desc) : null,
           ]),
         ],
@@ -125,8 +128,18 @@ window.__ModuleLoader__.load({
       }, [load])
 
       const config = state?.config || {}
-      const value = useCallback((key) => (draft[key] !== undefined ? draft[key] : config[key]), [draft, config])
+      const caps = config.capabilities || {}
+      // draft wins, then the nested capabilities map, then the flat key
+      const value = useCallback(
+        (key) => (draft[key] !== undefined ? draft[key] : caps[key] !== undefined ? caps[key] : config[key]),
+        [draft, caps, config],
+      )
+      const dirty = useCallback((key) => draft[key] !== undefined, [draft])
       const setValue = useCallback((key, next) => setDraft((current) => ({ ...current, [key]: next })), [])
+      const capsOn = useMemo(
+        () => (state?.capabilityCatalog || []).filter((cap) => Boolean(value(cap.key))).length,
+        [state, value],
+      )
 
       const save = useCallback(async () => {
         if (Object.keys(draft).length === 0) return
@@ -190,9 +203,10 @@ window.__ModuleLoader__.load({
               ? `${formatTime(status.lastRun.at)} · ${status.lastRun.ok ? '成功' : `失败：${status.lastRun.error || ''}`}`
               : '还没跑过',
           ],
+          ['设置保存于', state?.updatedAt ? formatTime(state.updatedAt) : '还没保存过'],
           ['当前', status.running ? '同步中…' : '空闲'],
         ]
-      }, [status])
+      }, [status, state?.updatedAt])
 
       if (!state) {
         return h('div', { style: { padding: 16, fontSize: 13 } }, error ? `读取失败：${error}` : '读取中…')
@@ -260,7 +274,8 @@ window.__ModuleLoader__.load({
               h(Toggle, {
                 key: 'enable',
                 label: '总开关',
-                desc: '关掉后「启动时同步」和手动同步都不动作',
+                desc: '关掉后任何自动与手动同步都不执行（仍可「只看计划」）',
+                dirty: dirty('enabled'),
                 checked: Boolean(value('enabled')),
                 onChange: (next) => setValue('enabled', next),
               }),
@@ -268,6 +283,7 @@ window.__ModuleLoader__.load({
                 key: 'startup',
                 label: '软件启动时同步',
                 desc: 'DSH 启动后约 25 秒跑一轮（等宿主把插件都挂上）',
+                dirty: dirty('autoStart'),
                 checked: Boolean(value('autoStart')),
                 onChange: (next) => setValue('autoStart', next),
               }),
@@ -275,22 +291,38 @@ window.__ModuleLoader__.load({
                 key: 'restart',
                 label: '服务器重启后同步',
                 desc: '进程重启之后再补一轮，处理对端还在启动的情况',
+                dirty: dirty('autoRestart'),
                 checked: Boolean(value('autoRestart')),
                 onChange: (next) => setValue('autoRestart', next),
               }),
-              h(Field, { key: 'interval', label: '每隔多少分钟同步（0 = 不按间隔）' },
-                input(value('intervalMinutes'), '0', (next) => setValue('intervalMinutes', Number(next) || 0))),
-              h(Field, { key: 'delay', label: '启动后延迟秒数' },
+              h(Toggle, {
+                key: 'interval',
+                label: '定时同步',
+                desc: 'DSH 运行期间每 N 分钟跑一轮；关掉就是「不按间隔」，和上面两轮互不影响',
+                dirty: dirty('intervalMinutes'),
+                checked: Number(value('intervalMinutes')) > 0,
+                onChange: (next) =>
+                  setValue('intervalMinutes', next ? Number(value('intervalMinutes')) || 15 : 0),
+              }),
+              Number(value('intervalMinutes')) > 0
+                ? h(
+                    Field,
+                    { key: 'intervalValue', label: '间隔分钟数（1–1440）' },
+                    input(value('intervalMinutes'), '15', (next) => setValue('intervalMinutes', Math.max(0, Number(next) || 0))),
+                  )
+                : null,
+              h(Field, { key: 'delay', label: '启动后延迟秒数（只影响「软件启动时同步」）' },
                 input(value('startupDelaySec'), '25', (next) => setValue('startupDelaySec', Number(next) || 0))),
             ]),
           ]),
 
-          h(Card, { key: 'caps', title: '权限（每一项可以单独关）' },
+          h(Card, { key: 'caps', title: `权限（已开启 ${capsOn} / ${(state.capabilityCatalog || []).length}，每一项可以单独关）` },
             (state.capabilityCatalog || []).map((cap) =>
               h(Toggle, {
                 key: cap.key,
                 label: cap.label,
                 desc: cap.desc,
+                dirty: dirty(cap.key),
                 checked: Boolean(value(cap.key)),
                 onChange: (next) => setValue(cap.key, next),
               }),
@@ -299,7 +331,13 @@ window.__ModuleLoader__.load({
 
           h('div', { key: 'save', style: { display: 'flex', gap: 8, alignItems: 'center' } }, [
             h('button', { key: 'save', style: BUTTON_PRIMARY, disabled: Boolean(busy) || Object.keys(draft).length === 0, onClick: () => void save() }, '保存设置'),
-            h('span', { key: 'hint', style: MUTED }, Object.keys(draft).length === 0 ? '没有未保存的改动' : `${Object.keys(draft).length} 项待保存`),
+            h(
+              'span',
+              { key: 'hint', style: MUTED },
+              Object.keys(draft).length === 0
+                ? `已保存 · ${state?.updatedAt ? formatTime(state.updatedAt) : '（本次打开后还没改过）'}`
+                : `${Object.keys(draft).length} 项待保存`,
+            ),
           ]),
 
           out ? h('pre', { key: 'out', style: { marginTop: 12, whiteSpace: 'pre-wrap', fontSize: 11.5, maxHeight: 260, overflow: 'auto', background: 'rgba(127,127,127,.1)', padding: 10, borderRadius: 8 } }, out) : null,

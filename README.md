@@ -40,6 +40,8 @@ dsh plugin --profile <profile> add @qic-9821/dsh-plugin-sync
 | 允许对端改动本机 | `capRemoteApply` | 关掉后对端连读都读不到 |
 | 同步密钥字段 | `capSecrets` | 默认关；`appSecret` / `token` / `*key*` 一律写成 `[redacted]` |
 
+默认只开「插件清单与启停」和「允许对端改动本机」；配置、安装、复制二进制、密钥四项要自己在设置页打开，打开后下一次自动同步就会真的落地对应操作。
+
 安装、升级、卸载、启停全部走宿主的 `pluginManager` 服务（`installBundle` / `updateBundle` / `removeBundle` / `setBundleEnabled` / `setPluginEnabled`），不自己拼 pnpm 命令行、不手写 profile 的 `package.json`，失败由宿主回滚它自己的改动。
 
 ## 怎么连
@@ -55,8 +57,10 @@ dsh plugin --profile <profile> add @qic-9821/dsh-plugin-sync
 
 - `autoStart`：DSH 启动后约 25 秒跑一轮（等宿主把插件挂完）。
 - `autoRestart`：进程重启后再补一轮（约 2 分钟），处理对端还在启动的情况；服务器重启后的同步就是这条。
-- `intervalMinutes`：固定间隔（0 = 关）。
+- `intervalMinutes`：固定间隔（0 = 关）。只在 DSH 运行期间生效，每 N 分钟跑一轮完整同步；和「启动时」「重启后」两轮互不影响。
 - 手动：面板/设置页按钮，或工具 `plugin_sync` `action="run"`。
+
+总开关 `enabled` 关掉后，以上任何自动同步与手动同步都不执行（仍可在面板上「只看计划」）。
 
 ## 冲突策略
 
