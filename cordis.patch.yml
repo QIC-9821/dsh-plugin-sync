@@ -1,0 +1,6 @@
+# dsh-plugin-sync — the row itself. Its settings (peer, capabilities, schedule)
+# are edited from 设置 → 插件同步 and stored in ~/.dsh/plugin-sync/state.json,
+# so this patch stays stable across upgrades.
+- insert:
+    - id: plugin-sync
+      name: 'dsh-plugin-sync'

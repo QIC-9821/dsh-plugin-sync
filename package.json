@@ -1,0 +1,45 @@
+{
+  "name": "dsh-plugin-sync",
+  "version": "0.1.0",
+  "description": "Keep the DSH plugin set (inventory, configs, enable state, package installs, local bundle binaries) in sync between two machines, with per-capability switches, schedule controls and a settings/panel UI.",
+  "license": "MIT",
+  "type": "module",
+  "private": false,
+  "engines": {
+    "node": ">=22"
+  },
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js"
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "lib/",
+    "README.md",
+    "cordis.patch.yml"
+  ],
+  "scripts": {
+    "test": "node --test test/*.test.js"
+  },
+  "keywords": [
+    "dsh",
+    "deepseek-harness",
+    "cordis",
+    "plugin",
+    "sync",
+    "profile"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-settings"
+      ]
+    }
+  }
+}
