@@ -182,6 +182,7 @@ window.__ModuleLoader__.load({
               : status.localError || '读取失败',
           ],
           ['profile 目录', status.profileDir || '?'],
+          ['版本', status.package ? `${status.package.name} ${status.package.version || ''}`.trim() : '?'],
           ['对端', status.peer?.describe || '?'],
           [
             '上次同步',
