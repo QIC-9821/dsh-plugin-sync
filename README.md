@@ -4,7 +4,15 @@
 
 npm：[`@qic-9821/dsh-plugin-sync`](https://www.npmjs.com/package/@qic-9821/dsh-plugin-sync) · 仓库：<https://github.com/QIC-9821/dsh-plugin-sync> · MIT
 
+## 演示
+
+独立面板（`http://127.0.0.1:<端口>/plugin-sync`）：状态、对端、同步方式、权限、计划日志一张页面上全有。
+
 ![独立面板](docs/panel.png)
+
+同一套设置在系统设置里也有一页（`设置 → 插件同步`），改完即保存，权限可以一项一项单独关：
+
+![设置页](docs/settings-sync.png)
 
 配套：`设置 → 插件同步`（系统设置菜单栏里的独立一页）、`设置 → 插件 → 同步`（Plugins 段内的一页）、独立面板 `http://127.0.0.1:<端口>/plugin-sync`、两个 Agent 工具 `plugin_sync` / `plugin_sync_config`。
 
