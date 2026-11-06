@@ -1,5 +1,5 @@
 window.__ModuleLoader__.load({
-  id: 'dsh-plugin-sync',
+  id: '@qic-9821/dsh-plugin-sync',
   factory(require) {
     const React = require('react')
     const h = React.createElement

@@ -36,7 +36,7 @@ const options = {
   include: state.include || [],
   exclude: state.exclude || [],
   mirror: false,
-  selfName: 'dsh-plugin-sync',
+  selfName: '@qic-9821/dsh-plugin-sync',
 }
 
 console.log('local:', JSON.stringify(summarizeSnapshot(local)))

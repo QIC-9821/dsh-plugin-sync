@@ -1,7 +1,7 @@
 import { Engine, readVersion } from './lib/engine.js'
 import { createRoutes } from './lib/http.js'
 
-export const name = 'dsh-plugin-sync'
+export const name = '@qic-9821/dsh-plugin-sync'
 
 /**
  * Config is optional: hosts without @deepseek-ai/schemastery must still load

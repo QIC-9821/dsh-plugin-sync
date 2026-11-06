@@ -3,4 +3,4 @@
 # so this patch stays stable across upgrades.
 - insert:
     - id: plugin-sync
-      name: 'dsh-plugin-sync'
+      name: '@qic-9821/dsh-plugin-sync'

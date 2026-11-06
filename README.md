@@ -1,8 +1,33 @@
-# dsh-plugin-sync
+# @qic-9821/dsh-plugin-sync
 
 让两台机器上的 **DeepSeek Harness 插件状态** 保持一致：装了什么、开着还是关着、配置是什么、本地插件目录要不要一起搬过去。
 
+npm：[`@qic-9821/dsh-plugin-sync`](https://www.npmjs.com/package/@qic-9821/dsh-plugin-sync) · 仓库：<https://github.com/QIC-9821/dsh-plugin-sync> · MIT
+
+![独立面板](docs/panel.png)
+
 配套：`设置 → 插件同步`（系统设置菜单栏里的独立一页）、`设置 → 插件 → 同步`（Plugins 段内的一页）、独立面板 `http://127.0.0.1:<端口>/plugin-sync`、两个 Agent 工具 `plugin_sync` / `plugin_sync_config`。
+
+## 安装
+
+两台机器各装一次（要同步的两端都必须装，否则对端接口不存在）：
+
+```bash
+# 已经解出源码时：把目录交给宿主安装（推荐，会自动写 profile 依赖与 lock）
+dsh plugin --profile <profile> add /path/to/dsh-plugin-sync
+
+# 或者从 npm 装
+dsh plugin --profile <profile> add @qic-9821/dsh-plugin-sync
+```
+
+在 App 里也可以走「设置 → 插件 → 安装」给绝对路径。装完刷新一次页面就会多出 `设置 → 插件同步`；宿主进程不用重启（路由和工具会当场挂上）。
+
+安装后两台机器都要做一次：
+
+1. 打开 `设置 → 插件同步`，填对端（地址或 SSH 主机/私钥）和两端相同的令牌。
+2. 改 `direction`（哪边推、哪边收）和要开的权限。
+3. 用「只看计划」确认清单再「立即同步」。
+
 
 ## 能同步什么
 
@@ -79,3 +104,21 @@ node scripts/probe-apply.mjs          # 过隧道打一次 /peer/apply（默认�
 - 只同步插件层：workspace、会话、密钥凭据（`.credentials.yaml`）不在范围内。
 - `config:` 段的写出是 flow mapping（`config: {"a":1}`），YAML 合法但和原有块状写法不同；无法解析的写法不会被动。
 - 安装 `file:` 插件时，对端会收到一份源码副本（排除 `node_modules` / `.git`），路径是本机的 `incoming/` 目录。
+
+## 开发
+
+```bash
+node --test test/*.test.js     # 25 个用例，纯 Node，无第三方依赖
+node scripts/verify-plan.mjs   # 对真实的两台机器跑一次计划，不落地
+```
+
+设置页在 `client.js` 里注册 `settings.section`（id `plugin-sync`，order 16）与 `settings.plugins.tab`；宿主侧路由在 `lib/http.js`，写操作在 `lib/apply.js`，计划器是纯函数 `lib/merge.js`（好单测）。
+
+设置页在云端实例里的样子：
+
+![设置页](docs/settings-sync.png)
+
+## 许可
+
+MIT © 2026 QIC-9821
+

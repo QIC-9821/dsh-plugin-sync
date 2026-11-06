@@ -1,0 +1,47 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  publish:
+    name: publish to npm
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+
+      - name: Verify tests
+        run: npm test
+
+      # 0.1.0 was published by hand from the maintainer's machine, so the tag
+      # for an already-published version must not try to publish again.
+      - name: Probe npm for this version
+        id: probe
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          if npm view "@qic-9821/dsh-plugin-sync@${version}" version >/dev/null 2>&1; then
+            echo "exists=yes" >> "$GITHUB_OUTPUT"
+            echo "::notice::@qic-9821/dsh-plugin-sync@${version} is already on npm; skipping publish"
+          else
+            echo "exists=no" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publish
+        if: steps.probe.outputs.exists == 'no'
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "${GITHUB_REF_NAME}" --generate-notes --title "${GITHUB_REF_NAME}"
